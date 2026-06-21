@@ -52,7 +52,7 @@ class CreateProductRequest extends FormRequest
                 'lt:main_price',
             ],
             'attributes' => [
-                'required',
+                'nullable',
                 'JSON',
             ],
             'category_id' => [
@@ -60,6 +60,21 @@ class CreateProductRequest extends FormRequest
                 'integer',
                 'exists:categories,id'
             ],
+            'main_images' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png',
+                'max:2048',
+            ],
+            'gallery_images' => [
+                'nullable',
+                'array'
+            ],
+            'gallery_images.*' => [
+                'image',
+                'mimes:jpg,jpeg,png',
+                'max:2048'
+            ]
         ];
     }
 }
