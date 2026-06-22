@@ -18,6 +18,8 @@ class OrderService
         $items = CartItems::where('user_id', $user_id)->get();
         $temp_items = [];
 
+        $order_price = null;
+
         $order_items = null;
         $order_status = null;
 
@@ -73,10 +75,13 @@ class OrderService
         }
 
         foreach ($temp_items as $temp_item) {
+            $temp_product = Product::findOrFail($temp_item->product_id);
+            $product_price = $temp_product->final_price ?? $temp_product->main_price;
             $order_items = OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $temp_item->product_id,
                 'quantity' => $temp_item->quantity,
+                'order_price' => $product_price * $temp_item->quantity,
             ]);
 
             Product::where('id', $temp_item->product_id)->decrement('stock', $temp_item->quantity);
@@ -163,7 +168,7 @@ class OrderService
 
     public function index($user_id)
     {
-        $orders = Order::where('user_id', $user_id)->get();
+        $orders = Order::with('items', 'status')->where('user_id', $user_id)->get();
 
         if ($orders->isEmpty()) {
             return 'There is no Order';
@@ -183,9 +188,7 @@ class OrderService
             return 'There is no Order';
         }
 
-        return [
-            'User' => $user_id,
-            'Orders' => $orders,
-        ];
+        return Order::with('items', 'status')->where('user_id', $user_id)->where('id', $order_id)->get();
+
     }
 }

@@ -10,7 +10,7 @@ class OrderController extends Controller
 {
     public function store(OrderRequest $orderRequest, OrderService $orderService)
     {
-        return $orderService->add(auth()->id(), $orderRequest->status->validated());
+        return $orderService->add(auth()->id(), $orderRequest->validated()['status']);
     }
 
     public function update(OrderRequest $orderRequest, OrderService $orderService)

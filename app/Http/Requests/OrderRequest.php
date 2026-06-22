@@ -24,7 +24,7 @@ class OrderRequest extends FormRequest
     {
         return [
             'user_id' => [
-                'required',
+                'nullable',
                 'integer'
             ],
             'order_id' => [

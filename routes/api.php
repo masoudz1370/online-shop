@@ -10,6 +10,8 @@ require __DIR__ . '/api/auth.php';
 require __DIR__ . '/api/products.php';
 require __DIR__ . '/api/cartItems.php';
 require __DIR__ . '/api/logs.php';
+require __DIR__ . '/api/orders.php';
+
 
 
 
