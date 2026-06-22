@@ -12,12 +12,25 @@ class ProductController extends Controller
 {
     public function store(CreateProductRequest $request, ProductService $productService)
     {
-        /*$data = $request->validated();
+        return $productService->add($request->validated());
+    }
 
-        Product::create($data);
+    public function update($product_id, CreateProductRequest $request, ProductService $productService)
+    {
+        return $productService->update($product_id, $request);
+    }
 
-        return 'Product Created';*/
+    public function destroy($product_id, ProductService $productService)
+    {
+        return $productService->remove($product_id);
+    }
+    public function index(ProductService $productService)
+    {
+        return $productService->getAll();
+    }
 
-        return $productService->add($request);
+    public function show($product_id, ProductService $productService)
+    {
+        return $productService->getByID($product_id);
     }
 }

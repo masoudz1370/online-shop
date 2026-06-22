@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Jobs\LogToMongo;
+//use Illuminate\Container\Attributes\Storage;
+use Illuminate\Support\Facades\Storage;
 
 
 
@@ -62,54 +64,133 @@ class ProductService
         $product->gallery_images = $gallery_images_paths;
         $product->save();
 
-
-    }
-
-    public function update($user_id, $order_id, $status)
-    {
-
-    }
-
-
-    public function remove($user_id, $order_id)
-    {
-        /*Order::where('user_id', $user_id)->where('id', $order_id)->delete();
-
         LogToMongo::dispatch([
-            'section' => 'order',
-            'action' => 'Order has removed',
-            'user_id' => $user_id,
-            'data' => $order_id,
+            'section' => 'products',
+            'action' => 'Product Created',
+            'user_id' => null,
+            'data' => [
+                'product_id' => $product_id,
+                'product' => $product->toArray()
+            ]
         ]);
 
-        return 'Order Has Removed';*/
+        return response()->json([
+            'message' => 'Product Has Created',
+            'product' => $product
+        ]);
+
+
     }
 
-    public function index($user_id)
+    public function update($product_id, $data)
     {
-        /*$orders = Order::where('user_id', $user_id)->get();
+        $product = Product::findOrFail($product_id);
 
-        if ($orders->isEmpty()) {
-            return 'There is no Order';
+        $nonFileData = $data->only([
+            'title',
+            'stock',
+            'main_price',
+            'final_price',
+            'attributes',
+            'category_id',
+        ]);
+
+        $product->update($nonFileData);
+
+        if ($data->hasFile('main_images')) {
+            Storage::disk('public')->delete($product->main_images);
         }
 
-        return [
-            'User' => $user_id,
-            'Orders' => $orders,
-        ];*/
+        if ($data->hasFile('gallery_images')) {
+            Storage::disk('public')->delete($product->gallery_images);
+        }
+
+
+        $images = [];
+
+        if ($data->hasFile('main_images')) {
+            $main_image_name = $data->file('main_images')->hashName();
+            $images['main_images'] = $data
+                ->file('main_images')
+                ->storeAs("images/products/{$product_id}", $main_image_name, 'public');
+        }
+
+        if ($data->hasFile('gallery_images')) {
+            $galleryImagesPaths = [];
+
+            foreach ($data->file('gallery_images') as $item) {
+                $item_name = $item->hashName();
+                $galleryImagesPaths[] = $item->storeAs(
+                    "images/products/{$product_id}",
+                    $item_name,
+                    'public'
+                );
+            }
+
+            $images['gallery_images'] = $galleryImagesPaths;
+        }
+
+        if (!empty($images)) {
+            $product->update($images);
+        }
+
+        LogToMongo::dispatch([
+            'section' => 'products',
+            'action' => "Product with ID: {$product_id} Updated",
+            'user_id' => null,
+            'data' => "Product: {$product->toArray()}"
+        ]);
+
+        return response()->json([
+            'message' => 'Product Has Updated',
+            'product' => $product
+        ]);
     }
 
-    public function show($user_id, $order_id)
-    {
-        /*$orders = Order::where('user_id', $user_id)->where('id', $order_id)->get();
 
-        if ($orders->isEmpty()) {
-            return 'There is no Order';
+    public function remove($product_id)
+    {
+
+        $product = Product::findOrFail($product_id);
+
+        if ($product->main_images) {
+            Storage::disk('public')->delete($product->main_images);
         }
 
-        return [
-            'User' => $user_id,
-            'Orders' => $orders,
-        ];*/
+        if ($product->gallery_images) {
+            Storage::disk('public')->delete($product->gallery_images);
+        }
+
+        $product->delete();
+
+        LogToMongo::dispatch([
+            'section' => 'products',
+            'action' => 'Product Has Removed',
+            'user_id' => null,
+            'data' => [
+                'product_id' => $product_id,
+                'product' => $product->toArray()
+            ]
+        ]);
+
+        return response()->json([
+            'message' => "Product With ID: {$product_id} Has Removed",
+        ]);
+
+    }
+
+    public function getAll()
+    {
+        return Product::paginate(10);
+    }
+
+    public function getByID($product_id)
+    {
+        $product = Product::findOrFail($product_id);
+
+        return response()->json([
+            'Product ID: ' => $product_id,
+            'Product: ' => $product
+        ]);
     }
 }
